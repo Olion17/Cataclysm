@@ -26,6 +26,40 @@
 #include "ScriptedGossip.h"
 #include "SpellInfo.h"
 #include "SharedDefines.h"
+#include "ObjectMgr.h"
+#include "Group.h"
+
+enum WestfallQuest
+{
+    QUEST_MURDER_WAS_THE_CASE_THAT_THEY_GAVE_ME = 26209,
+    QUEST_LOUS_PARTING_THOUGHTS                 = 26232
+};
+
+enum WestfallCreature
+{
+    NPC_HOMELESS_STORMWIND_CITIZEN_1  = 42386,
+    NPC_HOMELESS_STORMWIND_CITIZEN_2  = 42384,
+    NPC_WEST_PLAINS_DRIFTER           = 42391,
+    NPC_TRANSIENT                     = 42383,
+    NPC_THUG                          = 42387,
+    MPC_LOUS_PARTING_THOUGHTS_TRIGGER = 42562,
+    NPC_SMALL_TIME_HUSTLER            = 42390
+};
+
+enum WestfallSpell
+{
+    SPELL_HOBO_INFORMATION_1 = 79181,
+    SPELL_HOBO_INFORMATION_2 = 79182,
+    SPELL_HOBO_INFORMATION_3 = 79183,
+    SPELL_HOBO_INFORMATION_4 = 79184,
+    SPELL_SUMMON_RAGAMUFFIN_LOOTER = 79169,
+    SPELL_SUMMON_RAGAMUFFIN_LOOTER_1 = 79170,
+    SPELL_SUMMON_RAGAMUFFIN_LOOTER_2 = 79171,
+    SPELL_SUMMON_RAGAMUFFIN_LOOTER_3 = 79172,
+    SPELL_SUMMON_RAGAMUFFIN_LOOTER_4 = 79173,
+    SPELL_AGGRO_HOBO = 79168,
+    SPELL_HOBO_INFORMATION = 79184
+};
 
 class spell_westfall_unbound_energy : public SpellScript
 {
@@ -179,31 +213,12 @@ enum HoboGossipOption
     OPTION_PAY      = 1,
 };
 
-enum HoboQuest
-{
-    QUEST_MURDER_WAS_THE_CASE_THAT_THEY_GAVE_ME = 26209
-};
-
 enum HoboQuestObjective
 {
     CLUE1 = 0,
     CLUE2 = 1,
     CLUE3 = 2,
     CLUE4 = 3
-};
-
-enum HoboSpell
-{
-    SPELL_HOBO_INFORMATION_1         = 79181,
-    SPELL_HOBO_INFORMATION_2         = 79182,
-    SPELL_HOBO_INFORMATION_3         = 79183,
-    SPELL_HOBO_INFORMATION_4         = 79184,
-    SPELL_SUMMON_RAGAMUFFIN_LOOTER   = 79169,
-    SPELL_SUMMON_RAGAMUFFIN_LOOTER_1 = 79170,
-    SPELL_SUMMON_RAGAMUFFIN_LOOTER_2 = 79171,
-    SPELL_SUMMON_RAGAMUFFIN_LOOTER_3 = 79172,
-    SPELL_SUMMON_RAGAMUFFIN_LOOTER_4 = 79173,
-    SPELL_AGGRO_HOBO                 = 79168
 };
 
 enum HoboText
@@ -231,14 +246,6 @@ enum HoboEvent
     EVENT_JACKPOT_END    = 6,
     EVENT_RESUME_MOVE    = 7,
     EVENT_GROUP_OOC      = 1
-};
-
-enum HoboCreature
-{
-    NPC_HOMELESS_STORMWIND_CITIZEN_1 = 42386,
-    NPC_HOMELESS_STORMWIND_CITIZEN_2 = 42384,
-    NPC_WEST_PLAINS_DRIFTER          = 42391,
-    NPC_TRANSIENT                    = 42383
 };
 
 enum HoboAction
@@ -849,6 +856,417 @@ private:
     ObjectGuid _transientGuid;
 };
 
+enum ThugText
+{
+    SAY_THUG_0 = 0,
+    SAY_THUG_1 = 1,
+    SAY_THUG_2 = 2,
+    SAY_THUG_3 = 3,
+    SAY_THUG_4 = 4,
+    SAY_THUG_5 = 5,
+    SAY_THUG_6 = 6,
+    SAY_WARNING = 0
+};
+
+enum ThugEvent
+{
+    EVENT_SUMMON_THUGS = 1,
+    EVENT_THUG1_SAY_0  = 2,
+    EVENT_THUG2_SAY_1  = 3,
+    EVENT_THUG2_SAY_2  = 4,
+    EVENT_THUG3_SAY_3  = 5,
+    EVENT_THUG1_SAY_4  = 6,
+    EVENT_THUG1_SAY_5  = 7,
+    EVENT_THUG1_SAY_6  = 8,
+    EVENT_THUG_CREDIT  = 9,
+    EVENT_THUG_RESET   = 10,
+    EVENT_THUG_SHOOT_1 = 11,
+    EVENT_THUG_SHOOT_2 = 12,
+    EVENT_THUG_SCREAM  = 13,
+    EVENT_THUG_WARNING = 14
+};
+
+enum ThugAction
+{
+    ACTION_THUG_RESET        = 1
+};
+
+enum ThugData
+{
+    DATA_THUG_DEATH = 1
+};
+
+enum ThugMisc
+{
+    OBJECT_SOUND_SHOOTING = 15071,
+    OBJECT_SOUND_SCREAM   = 17852
+};
+
+class at_westfall_two_shoed_lou_thugs : public AreaTriggerScript
+{
+public:
+    at_westfall_two_shoed_lou_thugs() : AreaTriggerScript("at_westfall_two_shoed_lou_thugs") { }
+
+    bool OnTrigger(Player* player, AreaTriggerEntry const* /*at*/) override
+    {
+        if (player->IsAlive())
+            if (player->GetQuestStatus(QUEST_LOUS_PARTING_THOUGHTS) == QUEST_STATUS_INCOMPLETE)
+                if (Creature* lousPartingThoughtsTrigger = player->FindNearestCreature(MPC_LOUS_PARTING_THOUGHTS_TRIGGER, 50.0f, true))
+                    if (lousPartingThoughtsTrigger->IsAIEnabled)
+                        lousPartingThoughtsTrigger->AI()->SetGUID(player->GetGUID());
+
+        return true;
+    }
+};
+
+struct npc_westfall_thug : public ScriptedAI
+{
+    npc_westfall_thug(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override
+    {
+        ScriptedAI::Reset();
+        _events.Reset();
+    }
+
+    void EnterEvadeMode(EvadeReason why) override
+    {
+        if (Creature* summoner = me->ToTempSummon()->GetSummoner()->ToCreature())
+            if (summoner->IsAIEnabled)
+                summoner->AI()->DoAction(ACTION_THUG_RESET);
+
+        me->DespawnOrUnsummon();
+    }
+
+    void JustDied(Unit* /*who*/) override
+    {
+        if (Creature * summoner = me->ToTempSummon()->GetSummoner()->ToCreature())
+            if (summoner->IsAIEnabled)
+                summoner->AI()->SetData(0, DATA_THUG_DEATH);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    EventMap _events;
+};
+
+Position const ThugPos[4] =
+{
+    { -9859.36f, 1332.42f, 41.9859f, 2.49582f  },
+    { -9862.52f, 1332.08f, 41.9859f, 0.855211f },
+    { -9863.49f, 1335.49f, 41.9859f, 5.63741f  },
+    { -9860.43f, 1335.46f, 41.9859f, 4.11898f  },
+};
+
+struct npc_westfall_lous_parting_thoughts_trigger : public ScriptedAI
+{
+    npc_westfall_lous_parting_thoughts_trigger(Creature* creature) : ScriptedAI(creature), _summons(), _thugDeathCount(0) { }
+
+    void SetGUID(ObjectGuid const& guid, int32 /*id*/) override
+    {
+        if (!_eventInvokerGUID.IsEmpty())
+            return;
+
+        _eventInvokerGUID = guid;
+
+        _events.ScheduleEvent(EVENT_THUG1_SAY_0, 0s);
+    }
+
+    void SetData(uint32 /*type*/, uint32 data) override
+    {
+        if (data == DATA_THUG_DEATH)
+        {
+            _thugDeathCount++;
+
+            if (_thugDeathCount >= 4)
+            {
+                _events.ScheduleEvent(EVENT_THUG_CREDIT, 0s);
+                DoAction(ACTION_THUG_RESET);
+            }
+        }
+    }
+
+    void DoAction(int32 action) override
+    {
+        switch (action)
+        {
+            case ACTION_THUG_RESET:
+                _events.ScheduleEvent(EVENT_SUMMON_THUGS, 60s);
+                break;
+        }
+    }
+
+    void JustAppeared() override
+    {
+        _events.ScheduleEvent(EVENT_SUMMON_THUGS, 0s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_SUMMON_THUGS:
+                    _summons[0] = me->SummonCreature(NPC_THUG, ThugPos[0], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 60s)->GetGUID();
+                    _summons[1] = me->SummonCreature(NPC_THUG, ThugPos[1], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 60s)->GetGUID();
+                    _summons[2] = me->SummonCreature(NPC_THUG, ThugPos[2], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 60s)->GetGUID();
+                    _summons[3] = me->SummonCreature(NPC_THUG, ThugPos[3], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 60s)->GetGUID();
+                    _eventInvokerGUID = ObjectGuid::Empty;
+                    _thugDeathCount = 0;
+                    break;
+                case EVENT_THUG1_SAY_0:
+                {
+                    Creature* thug1 = ObjectAccessor::GetCreature(*me, _summons[0]);
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker && thug1)
+                        if (thug1->IsAIEnabled)
+                            thug1->AI()->Talk(SAY_THUG_0, invoker);
+                    _events.ScheduleEvent(EVENT_THUG2_SAY_1, 5s);
+                    break;
+                }
+                case EVENT_THUG2_SAY_1:
+                {
+                    Creature* thug2 = ObjectAccessor::GetCreature(*me, _summons[1]);
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker && thug2)
+                        if (thug2->IsAIEnabled)
+                            thug2->AI()->Talk(SAY_THUG_1, invoker);
+                    _events.ScheduleEvent(EVENT_THUG2_SAY_2, 5s);
+                    break;
+                }
+                case EVENT_THUG2_SAY_2:
+                {
+                    Creature* thug2 = ObjectAccessor::GetCreature(*me, _summons[1]);
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker && thug2)
+                        if (thug2->IsAIEnabled)
+                            thug2->AI()->Talk(SAY_THUG_2, invoker);
+                    _events.ScheduleEvent(EVENT_THUG3_SAY_3, 8s + 500ms);
+                    break;
+                }
+                case EVENT_THUG3_SAY_3:
+                {
+                    Creature* thug3 = ObjectAccessor::GetCreature(*me, _summons[2]);
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker && thug3)
+                        if (thug3->IsAIEnabled)
+                            thug3->AI()->Talk(SAY_THUG_3, invoker);
+                    _events.ScheduleEvent(EVENT_THUG1_SAY_4, 5s);
+                    break;
+                }
+                case EVENT_THUG1_SAY_4:
+                {
+                    Creature* thug1 = ObjectAccessor::GetCreature(*me, _summons[0]);
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker && thug1)
+                    {
+                        if (thug1->IsAIEnabled)
+                            thug1->AI()->Talk(SAY_THUG_4, invoker);
+
+                        for (ObjectGuid const& guid : _summons)
+                            if (Creature* thug = ObjectAccessor::GetCreature(*me, guid))
+                                thug->SetFacingToObject(invoker);
+                    }
+
+                    _events.ScheduleEvent(EVENT_THUG1_SAY_5, 8s + 500ms);
+                    break;
+                }
+                case EVENT_THUG1_SAY_5:
+                {
+                    Creature* thug1 = ObjectAccessor::GetCreature(*me, _summons[0]);
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker && thug1)
+                        if (thug1->IsAIEnabled)
+                            thug1->AI()->Talk(SAY_THUG_5, invoker);
+
+
+                    _events.ScheduleEvent(EVENT_THUG1_SAY_6, 5s);
+                    break;
+                }
+                case EVENT_THUG1_SAY_6:
+                {
+                    Creature* thug1 = ObjectAccessor::GetCreature(*me, _summons[0]);
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker && thug1)
+                    {
+                        if (thug1->IsAIEnabled)
+                            thug1->AI()->Talk(SAY_THUG_6, invoker);
+
+                        for (ObjectGuid const& guid : _summons)
+                            if (Creature* thug = ObjectAccessor::GetCreature(*me, guid))
+                            {
+                                thug->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                                if (thug->IsAIEnabled)
+                                    thug->AI()->AttackStart(invoker);
+                            }
+                    }
+                    break;
+                }
+                case EVENT_THUG_CREDIT:
+                {
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker)
+                    {
+                        invoker->CastSpell(invoker, SPELL_HOBO_INFORMATION, TriggerCastFlags(TRIGGERED_FULL_MASK));
+
+                        if (Group* group = invoker->GetGroup())
+                        {
+                            for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
+                            {
+                                Player* groupMember = itr->GetSource();
+                                if (groupMember && groupMember->IsInMap(invoker) && groupMember->GetQuestStatus(QUEST_LOUS_PARTING_THOUGHTS) == QUEST_STATUS_INCOMPLETE && groupMember->GetDistance(me) <= 75.f)
+                                {
+                                    groupMember->CastSpell(groupMember, SPELL_HOBO_INFORMATION, TriggerCastFlags(TRIGGERED_FULL_MASK));
+                                }
+                            }
+                        }
+                    }
+                    _events.ScheduleEvent(EVENT_THUG_SHOOT_1, 1s + 500ms);
+                    break;
+                }
+                case EVENT_THUG_SHOOT_1:
+                {
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker)
+                        me->PlayDistanceSound(OBJECT_SOUND_SHOOTING, invoker);
+
+                    _events.ScheduleEvent(EVENT_THUG_SHOOT_2, 1s + 200ms);
+                    break;
+                }
+                case EVENT_THUG_SHOOT_2:
+                {
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker)
+                        me->PlayDistanceSound(OBJECT_SOUND_SHOOTING, invoker);
+
+                    _events.ScheduleEvent(EVENT_THUG_SCREAM, 1s + 200ms);
+                    break;
+                }
+                case EVENT_THUG_SCREAM:
+                {
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker)
+                        me->PlayDistanceSound(OBJECT_SOUND_SCREAM, invoker);
+
+                    _events.ScheduleEvent(EVENT_THUG_WARNING, 2s + 500ms);
+                    break;
+                }
+                case EVENT_THUG_WARNING:
+                {
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker)
+                        Talk(SAY_WARNING, invoker);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    EventMap _events;
+    ObjectGuid _eventInvokerGUID;
+    std::array<ObjectGuid, 4> _summons;
+    uint32 _thugDeathCount;
+};
+
+enum SmallTimeEvent
+{
+    EVENT_TALK_0 = 1,
+    EVENT_TALK_1 = 2,
+    EVENT_RESET  = 3
+};
+
+enum SmallTimeSay
+{
+    SAY_SMALL_TIME_0 = 0,
+    SAY_SMALL_TIME_1 = 1
+};
+
+class at_westfall_small_time_hustler : public AreaTriggerScript
+{
+public:
+    at_westfall_small_time_hustler() : AreaTriggerScript("at_westfall_small_time_hustler") { }
+
+    bool OnTrigger(Player* player, AreaTriggerEntry const* /*at*/) override
+    {
+        if (player->IsAlive())
+            if (Creature* lousPartingThoughtsTrigger = player->FindNearestCreature(NPC_SMALL_TIME_HUSTLER, 10.0f, true))
+                if (lousPartingThoughtsTrigger->IsAIEnabled)
+                    lousPartingThoughtsTrigger->AI()->SetGUID(player->GetGUID());
+
+        return true;
+    }
+};
+
+struct npc_westfall_small_time_hustler : public ScriptedAI
+{
+    npc_westfall_small_time_hustler(Creature* creature) : ScriptedAI(creature) { }
+
+    void SetGUID(ObjectGuid const& guid, int32 /*id*/) override
+    {
+        if (!_eventInvokerGUID.IsEmpty())
+            return;
+
+        _eventInvokerGUID = guid;
+
+        _events.ScheduleEvent(EVENT_TALK_0, 0s);
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        _events.Update(diff);
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_TALK_0:
+                {
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker)
+                    {
+                        me->SetFacingToObject(invoker);
+                        Talk(SAY_SMALL_TIME_0, invoker);
+                        _events.ScheduleEvent(EVENT_TALK_1, 4s);
+                    }
+                    break;
+                }
+                case EVENT_TALK_1:
+                {
+                    Player* invoker = ObjectAccessor::GetPlayer(*me, _eventInvokerGUID);
+                    if (invoker)
+                    {
+                        Talk(SAY_SMALL_TIME_1, invoker);
+                        _events.ScheduleEvent(EVENT_RESET, 60s);
+                    }
+                    break;
+                }
+                case EVENT_RESET:
+                {
+                    _eventInvokerGUID = ObjectGuid::Empty;
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+private:
+    EventMap _events;
+    ObjectGuid _eventInvokerGUID;
+};
+
 void AddSC_westfall()
 {
     RegisterSpellScript(spell_westfall_unbound_energy);
@@ -862,4 +1280,9 @@ void AddSC_westfall()
     RegisterCreatureAI(npc_westfall_refugee_bridge_to_sentinelhill);
     RegisterCreatureAI(npc_westfall_west_plains_drifter);
     RegisterCreatureAI(npc_westfall_sentinel_hill_guard);
+    new at_westfall_two_shoed_lou_thugs();
+    RegisterCreatureAI(npc_westfall_thug);
+    RegisterCreatureAI(npc_westfall_lous_parting_thoughts_trigger);
+    new at_westfall_small_time_hustler();
+    RegisterCreatureAI(npc_westfall_small_time_hustler);
 }

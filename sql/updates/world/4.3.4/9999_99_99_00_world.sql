@@ -240,3 +240,57 @@ INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry
 DELETE FROM `gossip_menu_option` WHERE `MenuId`=11779 AND `OptionIndex`=0;
 INSERT INTO `gossip_menu_option` (`MenuId`, `OptionIndex`, `OptionIcon`, `OptionText`, `OptionBroadcastTextId`, `OptionType`, `OptionNpcflag`, `VerifiedBuild`) VALUES
 (11779, 0, 1, 'Let me browse your goods.', 2823, 3, 128, 15595);
+
+ -- Timed list 4250000
+SET @ENTRY := 4250000;
+DELETE FROM smart_scripts WHERE entryOrGuid = @ENTRY AND source_type = 9;
+INSERT INTO smart_scripts (entryorguid, source_type, id, link, event_type, event_phase_mask, event_chance, event_flags, event_param1, event_param2, event_param3, event_param4, action_type, action_param1, action_param2, action_param3, action_param4, action_param5, action_param6, target_type, target_param1, target_param2, target_param3, target_x, target_y, target_z, target_o, comment) VALUES
+(@ENTRY, 9, 0, 0, 0, 0, 100, 0, 9300, 9300, 0, 0, 86, 79290, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "After 9.3 seconds - Target unit in Seat 0: Cast spell General Trigger 1: Glubtok (79290) at Self"),
+(@ENTRY, 9, 1, 0, 0, 0, 100, 0, 6500, 6500, 0, 0, 86, 79279, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "After 6.5 seconds - Target unit in Seat 0: Cast spell General Trigger 1: Figure (79279) at Self"),
+(@ENTRY, 9, 2, 0, 0, 0, 100, 0, 8000, 8000, 0, 0, 86, 79292, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "After 8 seconds - Target unit in Seat 0: Cast spell General Trigger 2: Glubtok (79292) at Self"),
+(@ENTRY, 9, 3, 0, 0, 0, 100, 0, 4000, 4000, 0, 0, 86, 79283, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "After 4 seconds - Target unit in Seat 0: Cast spell General Trigger 2: Figure (79283) at Self"),
+(@ENTRY, 9, 4, 0, 0, 0, 100, 0, 16000, 16000, 0, 0, 86, 79294, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "After 16 seconds - Target unit in Seat 0: Cast spell General Trigger 3: Glubtok (79294) at Self"),
+(@ENTRY, 9, 5, 0, 0, 0, 100, 0, 4100, 4100, 0, 0, 86, 79284, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "After 4.1 seconds - Target unit in Seat 0: Cast spell General Trigger 3: Figure (79284) at Self"),
+(@ENTRY, 9, 6, 0, 0, 0, 100, 0, 6400, 6400, 0, 0, 86, 79297, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "After 6.4 seconds - Target unit in Seat 0: Cast spell General Trigger 4: Glubtok (79297) at Self"),
+(@ENTRY, 9, 7, 0, 0, 0, 100, 0, 11400, 11400, 0, 0, 86, 79287, 0, 29, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, "After 11.4 seconds - Target unit in Seat 0: Cast spell General Trigger 4: Figure (79287) at Self");
+
+DELETE FROM `creature_text` WHERE `CreatureID` IN (42387, 42562);
+INSERT INTO `creature_text` (`CreatureID`, `GroupID`, `ID`, `Text`, `Type`, `Language`, `Probability`, `Emote`, `Duration`, `Sound`, `BroadcastTextId`, `comment`) VALUES
+(42387, 0, 0, 'Did you... Did you meet her?', 12, 7, 100, 6, 0, 0, 42439, 'Thug to Player'),
+(42387, 1, 0, 'Yep. She\'s for real.', 12, 7, 100, 396, 0, 0, 42440, 'Thug to Player'),
+(42387, 2, 0, 'She wanted me to tell you lugs that she appreciates the job that we did for her on the Furlbrows. Gave me a pile o\' gold to split with you all.', 12, 7, 100, 396, 0, 0, 42441, 'Thug to Player'),
+(42387, 3, 0, 'See her face? Is it really...', 12, 0, 100, 6, 0, 0, 42442, 'Thug to Player'),
+(42387, 4, 0, 'Whoa, what do we have here? Looks like we have ourselves an eavesdropper, boys.', 12, 0, 100, 5, 0, 0, 42443, 'Thug to Player'),
+(42387, 5, 0, 'Only one thing to do with a lousy, good-for-nothin eavesdropper.', 12, 0, 100, 397, 0, 0, 42444, 'Thug to Player'),
+(42387, 6, 0, 'DIE!', 12, 0, 100, 53, 0, 0, 28793, 'Thug to Player'), -- BroadcastTextID: 1694 - 9359 - 14091 - 28793 - 42445 - 51125 - 69531
+(42562, 0, 0, 'Hurry back to the Furlbrow\'s Cottage!', 42, 0, 100, 0, 0, 0, 42446, 'Lou\'s Parting Thoughts Trigger to Player');
+
+DELETE FROM `areatrigger_scripts` WHERE `entry`=5988;
+INSERT INTO `areatrigger_scripts` (`entry`, `ScriptName`) VALUES (5988, 'at_westfall_two_shoed_lou_thugs');
+
+UPDATE `creature_template` SET `ScriptName`='npc_westfall_thug' WHERE `entry`=42387;
+UPDATE `creature_template` SET `ScriptName`='npc_westfall_lous_parting_thoughts_trigger' WHERE `entry`=42562;
+
+DELETE FROM `creature` WHERE  `guid`=275910;
+DELETE FROM `creature` WHERE  `guid`=275911;
+DELETE FROM `creature` WHERE  `guid`=275915;
+DELETE FROM `creature` WHERE  `guid`=275916;
+
+DELETE FROM `spell_area` WHERE `spell`=79346 AND `area`=40 AND `quest_start`=26232 AND `aura_spell`=0 AND `racemask`=0 AND `gender`=2;
+INSERT INTO `spell_area` (`spell`, `area`, `quest_start`, `quest_end`, `aura_spell`, `racemask`, `gender`, `flags`, `quest_start_status`, `quest_end_status`) VALUES
+(79346, 40, 26232, 0, 0, 0, 2, 3, 66, 11);
+
+DELETE FROM `creature_text` WHERE `CreatureID` = 42390;
+INSERT INTO `creature_text` (`CreatureID`, `GroupID`, `ID`, `Text`, `Type`, `Language`, `Probability`, `Emote`, `Duration`, `Sound`, `BroadcastTextId`, `comment`) VALUES
+(42390, 0, 0, 'Pssst...', 12, 0, 100, 0, 0, 0, 42306, 'Small-Time Hustler to Player'),
+(42390, 1, 0, 'What\'re you doin\' out here? Slummin\'?', 12, 7, 100, 25, 0, 0, 42310, 'Small-Time Hustler to Player'),
+(42390, 1, 1, 'I think we can do business.', 12, 7, 100, 25, 0, 0, 42313, 'Small-Time Hustler to Player'),
+(42390, 1, 2, 'You need something, $g mack:lady;?', 12, 7, 100, 25, 0, 0, 42307, 'Small-Time Hustler to Player'),
+(42390, 1, 3, 'You lookin\' for somethin\' a little more... exotic?', 12, 7, 100, 25, 0, 0, 42312, 'Small-Time Hustler to Player'),
+(42390, 1, 4, 'Whaddya need? Information? I got that too!', 12, 7, 100, 25, 0, 0, 42311, 'Small-Time Hustler to Player'),
+(42390, 1, 5, 'Keep your head low, $g buddy:lady;.', 12, 7, 100, 25, 0, 0, 42314, 'Small-Time Hustler to Player');
+
+DELETE FROM `areatrigger_scripts` WHERE `entry`=5987;
+INSERT INTO `areatrigger_scripts` (`entry`, `ScriptName`) VALUES (5987, 'at_westfall_small_time_hustler');
+
+UPDATE `creature_template` SET `ScriptName`='npc_westfall_small_time_hustler' WHERE  `entry`=42390;
